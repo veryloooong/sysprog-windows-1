@@ -1,6 +1,9 @@
 // sysprog-windows-1.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include <Windows.h>
+#include <Psapi.h>
+#include <tchar.h>
+#include <stdlib.h>
 
 struct ProcessDetails {
   DWORD process_id;
@@ -9,17 +12,45 @@ struct ProcessDetails {
   char parent_process_name[MAX_PATH];
 };
 
-int main() {
-  HANDLE stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (stdout == INVALID_HANDLE_VALUE || stdout == NULL) {
-    return 1;
-  }
+void print_process_details(DWORD process_id) {  
+  TCHAR process_name[MAX_PATH] = TEXT("<unknown>");  
+   
+  HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id);  
+  if (process != NULL) {  
+   HMODULE module;  
+   DWORD needed;  
+   
+   if (EnumProcessModulesEx(process, &module, sizeof(module), &needed, LIST_MODULES_ALL)) {  
+     GetModuleBaseName(process, module, process_name, sizeof(process_name) / sizeof(TCHAR));  
+   }  
+  }  
+   
+  _tprintf(TEXT("%u\t0\t%ls\t%ls\n"), process_id, process_name, TEXT("<todo>"));  
+  
+  if (process != NULL)
+    CloseHandle(process);  
+}
 
-  DWORD written;
-  const char* message = "Hello, Windows World!\n";
-  BOOL success = WriteConsoleA(stdout, message, (DWORD)strlen(message), &written, NULL);
-  if (!success || written != strlen(message)) {
-    return 1;
+int _cmp_function(const void* a, const void* b) {  
+  int int_a = *(const int*)a;  
+  int int_b = *(const int*)b;  
+  return (int_a > int_b) - (int_a < int_b);  
+}
+
+int main() {
+  DWORD processes[2048], needed, processes_count;
+
+  if (!EnumProcesses(processes, sizeof(processes), &needed)) return 1;
+
+  processes_count = needed / sizeof(DWORD);
+  qsort(processes, processes_count, sizeof(DWORD), _cmp_function);
+
+  _tprintf(TEXT("PID\tPPID\tName\tParentName\n"));
+
+  for (unsigned int i = 0; i < processes_count; i++) {
+    if (processes[i] != 0) {
+      print_process_details(processes[i]);
+    }
   }
 
   return 0;
