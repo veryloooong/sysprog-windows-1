@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug sysprog-windows-1.cpp",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/sysprog-windows-1.exe",
+      "args": [],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "build sysprog-windows-1.exe"
+    }
+  ]
+}
